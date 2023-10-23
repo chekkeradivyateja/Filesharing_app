@@ -1,0 +1,57 @@
+import http.server
+import socket
+import socketserver
+import webbrowser
+import pyqrcode
+from pyqrcode import QRCode
+import os
+
+PORT = 8010
+os.environ['USERPROFILE']
+
+# Specify the file path you want to share
+file_to_share = 'T:\resumes'
+
+desktop = os.path.join(os.path.join(os.environ['USERPROFILE']), 'OneDrive')
+os.chdir(desktop)
+
+Handler = http.server.SimpleHTTPRequestHandler
+hostname = socket.gethostname()
+
+s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+s.connect(("8.8.8.8", 80))
+IP = "http://" + s.getsockname()[0] + ":" + str(PORT)
+link = IP
+
+# Convert the IP address into a QR code
+url = pyqrcode.create(link)
+url.svg("myqr.svg", scale=8)
+
+# Create an HTML file to display the QR code and specified file
+with open("qrcode_display.html", "w") as html_file:
+    html_code = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>QR Code Display</title>
+    </head>
+    <body>
+        <h1>QR Code</h1>
+        <img src="myqr.svg" alt="QR Code">
+        <p>File to share: <a href="{file_to_share}" download>Download File</a></p>
+    </body>
+    </html>
+    """
+    html_file.write(html_code)
+
+# Start the HTTP server to serve the HTML and the QR code
+with socketserver.TCPServer(("", PORT), Handler) as httpd:
+    print("Serving at port", PORT)
+    print("Type this in your browser:", IP)
+    print("or use the QR Code")
+    
+    # Open the HTML file in the default web browser
+    webbrowser.open("qrcode_display.html")
+    
+    httpd.serve_forever()
+
